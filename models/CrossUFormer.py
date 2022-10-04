@@ -451,7 +451,7 @@ class SKFusion(nn.Module):
 		return out      
 
 
-class CrossUFormer(nn.Module):
+class Model(nn.Module):
 	def __init__(self, in_chans=3, out_chans=4, window_size=8, img_size = 128,
 				 embed_dims=[24, 48, 96, 96, 48, 24],
 				 mlp_ratios=[2., 2., 4., 4., 2., 2.],
@@ -460,7 +460,7 @@ class CrossUFormer(nn.Module):
 				 attn_ratio=[1 / 4, 1 / 2, 3 / 4, 0, 0, 0],
 				 conv_type=['DWConv', 'DWConv', 'DWConv', 'DWConv', 'DWConv', 'DWConv'],
 				 norm_layer=[RLN, RLN, RLN, RLN, RLN, RLN]):
-		super(CrossUFormer, self).__init__()
+		super(Model, self).__init__()
 
 		# setting
 		self.patch_size = 4
@@ -597,12 +597,5 @@ class CrossUFormer(nn.Module):
 
 		return x
 
-def CrossUFormer_b():
-    return CrossUFormer(
-        embed_dims=[24, 48, 96, 96, 48, 24],
-		mlp_ratios=[2., 2., 4., 4., 2., 2.],
-		depths=[2, 4, 8, 8, 4, 2],
-		num_heads=[2, 4, 6, 6, 4, 2],
-		attn_ratio=[1/4, 1/2, 3/4, 0, 0, 0],
-		conv_type=['DWConv', 'DWConv', 'DWConv', 'DWConv', 'DWConv', 'DWConv'])
+
 

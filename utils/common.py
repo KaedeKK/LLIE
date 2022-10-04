@@ -52,25 +52,14 @@ def train_read_img(filename):
 	return img[:, :, ::-1].astype('float32') / 255.0
 
 def read_img(filename):
-	# img = cv2.imread(filename)
-	# print(img)
-	# # img = img.resize((256, 256), Image.ANTIALIAS)
-	# return img[:, :, ::-1].astype('float32') / 255.0
 	img = Image.open(filename)
-	img = img.resize((256, 256), Image.ANTIALIAS)
+	img = img.resize((512,512), Image.ANTIALIAS)
 	img = numpy.array(img).astype('float32') /255
-	# print(img.shape,img.type())
 	return img
 def test_read_img(filename):
-	# img = cv2.imread(filename)
-	# print(img)
-	# # img = img.resize((256, 256), Image.ANTIALIAS)
-	# return img[:, :, ::-1].astype('float32') / 255.0
 	img = Image.open(filename)
-	# print(img.shape())
-	img = img.resize((384,384), Image.ANTIALIAS)
+	img = img.resize((512,512), Image.ANTIALIAS)
 	img = numpy.array(img).astype('float32') /255
-	# print(img.shape,img.type())
 	return img
 
 def write_img(filename, img):
