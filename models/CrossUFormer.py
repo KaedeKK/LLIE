@@ -420,9 +420,9 @@ class PatchUnEmbed(nn.Module):
 		return x
 
 
-class SKFusion(nn.Module):
+class AdaptiveFusion(nn.Module):
 	def __init__(self, dim, height=2, reduction=8):
-		super(SKFusion, self).__init__()
+		super(AdaptiveFusion, self).__init__()
 		
 		self.height = height
 		d = max(int(dim/reduction), 4)
@@ -506,7 +506,7 @@ class Model(nn.Module):
 		# print(embed_dims[1],embed_dims[3])
 		assert embed_dims[2] == embed_dims[3]
 		assert embed_dims[1] == embed_dims[4]
-		self.fusion1 = SKFusion(embed_dims[0])
+		self.fusion1 = AdaptiveFusion(embed_dims[0])
 
 		self.layer4 = BasicLayer(input_resolution=(self.img_size//4,self.img_size//4),network_depth=sum(depths), dim=embed_dims[3], depth=depths[3],
 								 num_heads=num_heads[3], mlp_ratio=mlp_ratios[3],
@@ -517,7 +517,7 @@ class Model(nn.Module):
 			patch_size=2, out_chans=embed_dims[5], embed_dim=embed_dims[4])
 
 		assert embed_dims[0] == embed_dims[5]
-		self.fusion2 = SKFusion(embed_dims[1])
+		self.fusion2 =AdaptiveFusion(embed_dims[1])
 
 		self.layer5 = BasicLayer(input_resolution=(self.img_size//2,self.img_size//2),network_depth=sum(depths), dim=embed_dims[4], depth=depths[4],
 								 num_heads=num_heads[4], mlp_ratio=mlp_ratios[4],
@@ -529,7 +529,7 @@ class Model(nn.Module):
 								 norm_layer=norm_layer[5], window_size=window_size,
 								 attn_ratio=attn_ratio[5], attn_loc='last', conv_type=conv_type[5])
 		self.skip3 = nn.Conv2d(embed_dims[2], embed_dims[2], 1)
-		self.fusion = SKFusion(embed_dims[2])
+		self.fusion = AdaptiveFusion(embed_dims[2])
 		# merge non-overlapping patches into image
 		self.patch_unembed = PatchUnEmbed(
 			patch_size=1, out_chans=out_chans, embed_dim=embed_dims[5], kernel_size=3)
