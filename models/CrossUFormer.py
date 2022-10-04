@@ -577,7 +577,6 @@ class Model(nn.Module):
 		x = self.layer5(x)
 		x = self.patch_split2(x)
 
-		# x = self.fusion1([x, self.skip1(skip1), long1]) + x
 		x = self.fusion1([x, long1]) + x
 		x = self.layer6(x)
 		x = self.patch_unembed(x)

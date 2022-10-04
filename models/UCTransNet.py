@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Time    : 2021/7/8 8:59 上午
-# @File    : UCTransNet.py
-# @Software: PyCharm
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -128,7 +124,7 @@ class UCTransNet(nn.Module):
         if self.n_classes == 1:
             logits = self.last_activation(self.outc(x))
         else:
-            logits = self.outc(x) # if nusing BCEWithLogitsLoss or class>1
+            logits = self.outc(x) #
         if self.vis: # visualize the attention maps
             return logits, att_weights
         else:
