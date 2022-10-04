@@ -3,7 +3,6 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# from pytorch_msssim import ssim
 from pytorch_ssim import ssim
 from torch.utils.data import DataLoader
 from collections import OrderedDict
@@ -14,7 +13,7 @@ from models import *
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', default='CrossUFormer-b', type=str, help='model name')
+parser.add_argument('--model', default='CrossUFormer', type=str, help='model name')
 parser.add_argument('--num_workers', default=16, type=int, help='number of workers')
 parser.add_argument('--data_dir', default='./data/Dataset/', type=str, help='path to dataset')
 parser.add_argument('--save_dir', default='./saved_models/', type=str, help='path to models saving')
@@ -22,6 +21,7 @@ parser.add_argument('--result_dir', default='./results/', type=str, help='path t
 parser.add_argument('--dataset', default='LOL', type=str, help='dataset name')
 parser.add_argument('--exp', default='LOL', type=str, help='experiment setting')
 args = parser.parse_args()
+
 
 
 def single(save_dir):
@@ -49,12 +49,6 @@ def test(test_loader, network, result_dir):
 	for idx, batch in enumerate(test_loader):
 		input = batch['source'].cuda()
 		target = batch['target'].cuda()
-		# input_0 = input_0.resize(256,256)
-		# target = target.resize(256,256)
-		# input = torch.zeros([16,input_0.size()[1],input_0.size()[2],input_0.size()[3]])
-		# input = input.cuda()
-		# for i in range(16):
-		# 	input[i,:,:,:]=input_0
 		c+=1
 		filename = batch['filename'][0]
 
@@ -64,17 +58,11 @@ def test(test_loader, network, result_dir):
 			print(output.size(),target.size())
 			output = output[0,:,:,:].unsqueeze(0)
 
-			# [-1, 1] to [0, 1]
-			# output = output * 0.5 + 0.5
-			# target = target * 0.5 + 0.5
 
 			psnr_val = 10 * torch.log10(1 / F.mse_loss(output, target)).item()
 
 			_, _, H, W = output.size()
-			down_ratio = max(1, round(min(H, W) / 256))		# Zhou Wang
-			# ssim_val = ssim(F.adaptive_avg_pool2d(output, (int(H / down_ratio), int(W / down_ratio))),
-			# 				F.adaptive_avg_pool2d(target, (int(H / down_ratio), int(W / down_ratio))),
-			# 				data_range=1, size_average=False).item()
+
 			ssim_val = ssim(output,target).item()
 			p+=psnr_val
 			s+=ssim_val

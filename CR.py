@@ -86,19 +86,6 @@ class Vgg19_p(torch.nn.Module):
 
         return h_relu1
 
-# class Perceptualvgg(nn.Module):
-#     def __init__(self, ablation=False):
-#
-#         super(Perceptualvgg, self).__init__()
-#         self.vgg_p = Vgg19_p().cuda()
-#         self.l1 = nn.L1Loss()
-#
-#     def forward(self, pre, gt):
-#         gt_vgg, p_vgg = self.vgg_p(gt), self.vgg_p(pre)
-#         loss = self.l1(p_vgg,gt_vgg)
-#
-#
-#         return loss
 
 class Perceptualvgg(nn.Module):
     def __init__(self, ablation=False):
@@ -108,25 +95,9 @@ class Perceptualvgg(nn.Module):
         self.l1 = nn.L1Loss()
         self.weights = [1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0]
         self.ab = ablation
-    # def forward(self, a, p, n):
-    #     a_vgg, p_vgg, n_vgg = self.vgg(a), self.vgg(p), self.vgg(n)
-    #     loss = 0
-    #
-    #     d_ap, d_an = 0, 0
-    #     for i in range(len(a_vgg)):
-    #         d_ap = self.l1(a_vgg[i], p_vgg[i].detach())
-    #         if not self.ab:
-    #             d_an = self.l1(a_vgg[i], n_vgg[i].detach())
-    #             contrastive = d_ap / (d_an + 1e-7)
-    #         else:
-    #             contrastive = d_ap
-    #
-    #         loss += self.weights[i] * contrastive
-    #     return loss
     def forward(self, pre, gt):
         pre_vgg, gt_vgg = self.vgg(pre), self.vgg(gt)
         loss = 0
-
         d_ap = 0
         for i in range(len(pre_vgg)):
             d_ap = self.l1(pre_vgg[i], gt_vgg[i].detach())
