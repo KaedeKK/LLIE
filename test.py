@@ -72,11 +72,11 @@ def test(test_loader, network, result_dir):
 
 
 		print('Test: [{0}]\t'
-			  'PSNR: {psnr.val:.02f} ({psnr.avg:.02f})\t'
-			  'SSIM: {ssim.val:.03f} ({ssim.avg:.03f})'
+			  'PSNR: {psnr.val:.04f} ({psnr.avg:.04f})\t'
+			  'SSIM: {ssim.val:.04f} ({ssim.avg:.04f})'
 			  .format(idx, psnr=PSNR, ssim=SSIM))
 
-		f_result.write('%s,%.02f,%.03f\n'%(filename, psnr_val, ssim_val))
+		f_result.write('%s,%.04f,%.04f\n'%(filename, psnr_val, ssim_val))
 
 		out_img = chw_to_hwc(output.detach().cpu().squeeze(0).numpy())
 		write_img(os.path.join(result_dir, 'imgs', filename), out_img)
