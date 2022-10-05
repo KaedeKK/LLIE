@@ -58,7 +58,7 @@ def read_img(filename):
 	return img
 def test_read_img(filename):
 	img = Image.open(filename)
-	img = img.resize((512,512), Image.ANTIALIAS)
+	img = img.resize((256,256), Image.ANTIALIAS)
 	img = numpy.array(img).astype('float32') /255
 	return img
 

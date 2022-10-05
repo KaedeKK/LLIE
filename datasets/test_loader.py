@@ -75,15 +75,6 @@ class PairLoader(Dataset):
         img_name = self.img_names[idx]
         source_img = test_read_img(os.path.join(self.root_dir, 'low', img_name))
         target_img = test_read_img(os.path.join(self.root_dir, 'high', img_name))
-        # source_img = source_img.resize(256,256)
-        # target_img = target_img.resize(256,256)
-        # print(source_img)
-        # print(os.path.join(self.root_dir, 'low', img_name))
-        # if self.mode == 'train':
-        #     [source_img, target_img] = augment([source_img, target_img], self.size, self.edge_decay, self.only_h_flip)
-        #
-        # if self.mode == 'valid':
-        #     [source_img, target_img] = align([source_img, target_img], self.size)
 
         return {'source': hwc_to_chw(source_img), 'target': hwc_to_chw(target_img), 'filename': img_name}
 
