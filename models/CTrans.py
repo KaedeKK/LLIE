@@ -9,7 +9,6 @@ import torch.nn as nn
 import numpy as np
 from torch.nn import Dropout, Softmax, Conv2d, LayerNorm
 from torch.nn.modules.utils import _pair
-# import Config
 
 KV_size = 168*2
 logger = logging.getLogger(__name__)
