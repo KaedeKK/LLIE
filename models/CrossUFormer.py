@@ -6,6 +6,7 @@ import numpy as np
 from torch.nn.init import _calculate_fan_in_and_fan_out
 from timm.models.layers import to_2tuple, trunc_normal_
 from .CTrans import ChannelTransformer
+from .Config import get_CTranS_config
 import os
 import torch
 import time
@@ -15,17 +16,19 @@ import ml_collections
 def get_CTranS_config():
     config = ml_collections.ConfigDict()
     config.transformer = ml_collections.ConfigDict()
-    config.KV_size = 960  # KV_size = Q1 + Q2 + Q3 + Q4
+    config.KV_size = 168
     config.transformer.num_heads  = 4
     config.transformer.num_layers = 4
-    config.expand_ratio           = 4  # MLP channel dimension expand ratio
+    config.expand_ratio  = 4
     config.transformer.embeddings_dropout_rate = 0.1
     config.transformer.attention_dropout_rate = 0.1
     config.transformer.dropout_rate = 0
     config.patch_sizes = [16,8,4,2]
-    config.base_channel = 64 # base channel of U-Net
+    config.base_channel = 24
     config.n_classes = 1
     return config
+
+
 
 
 config_cross = get_CTranS_config()
@@ -96,11 +99,8 @@ class Mlp(nn.Module):
 
 def window_partition(x, window_size):
 	B, H, W, C = x.shape
-	# print(x.shape,window_size)
 	x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
-	# print(x.shape)
 	windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size**2, C)
-	# print(windows.size())
 	return windows
 
 
@@ -147,12 +147,10 @@ class WindowAttention(nn.Module):
 
 	def forward(self, qkv,mask=None):
 		B_, N, _ = qkv.shape
-		# print(qkv.shape)
 
 		qkv = qkv.reshape(B_, N, 3, self.num_heads, self.dim // self.num_heads).permute(2, 0, 3, 1, 4)
 
-		q, k, v = qkv[0], qkv[1], qkv[2]  # make torchscript happy (cannot use tensor as tuple)
-
+		q, k, v = qkv[0], qkv[1], qkv[2]
 		q = q * self.scale
 		attn = (q @ k.transpose(-2, -1))
 
@@ -162,16 +160,11 @@ class WindowAttention(nn.Module):
 
 		if mask is not None:
 			nW = mask.shape[0]
-			# print(mask.shape,attn.size())
 			attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
 			attn = attn.view(-1, self.num_heads, N, N)
 			attn = self.softmax(attn)
 		else:
 			attn = self.softmax(attn)
-
-		# attn = self.attn_drop(attn)
-
-		# x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
 
 
 		x = (attn @ v).transpose(1, 2).reshape(B_, N, self.dim)
@@ -217,7 +210,6 @@ class Attention(nn.Module):
 
 		if self.use_attn:
 			self.QK = nn.Conv2d(dim, dim * 2, 1)
-			# print('dim: ',dim, 'window_size: ',window_size, 'num_heads: ',num_heads)
 			self.attn = WindowAttention(dim, window_size, num_heads)
 
 		self.apply(self._init_weights)
@@ -276,17 +268,13 @@ class Attention(nn.Module):
 			x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
 		return x
 
-	# def forward(self, X):
 	def forward(self, x):
-		# print(x.size())
+
 		B, C, H, W = x.shape
 
 		if self.conv_type == 'DWConv' or self.use_attn:
 			V = self.V(x)
 
-		# x = self.norm1(x)
-		# x = x.view(B, H, W, C)
-		# x = x.permute(0, 2, 3, 1)
 		if self.use_attn:
 			QK = self.QK(x)
 			QKV = torch.cat([QK, V], dim=1)
@@ -297,16 +285,10 @@ class Attention(nn.Module):
 				shifted_x = x_qkv
 
 			# partition windows
-			# print('size: ',shifted_x.size())
 			x_windows = window_partition(shifted_x, self.window_size)  # nW*B, window_size*window_size, C
 
 			# W-MSA/SW-MSA
-			# print('x_windows_size: ',x_windows.size())
-			# print('x_window: ',x_windows)
-			# print('mask_size: ',self.attn_mask.size())
-			# print('mask: ',self.attn_mask)
 			attn_windows = self.attn(x_windows, mask=self.attn_mask)  # nW*B, window_size*window_size, C
-			# attn_windows = self.attn(x_windows, mask=None)  # nW*B, window_size*window_size, C
 
 			# merge windows
 			attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
@@ -325,12 +307,12 @@ class Attention(nn.Module):
 				out = self.proj(shift_out)
 		else:
 			if self.conv_type == 'Conv':
-				out = self.conv(x)				# no attention and use conv, no projection
+				out = self.conv(x)
 			elif self.conv_type == 'DWConv':
 				out = self.proj(self.conv(V))
 
 		return out
-		# cyclic shift
+
 
 
 
@@ -458,7 +440,7 @@ class AdaptiveFusion(nn.Module):
 
 	def forward(self, in_feats):
 		B, C, H, W = in_feats[0].shape
-		# print(in_feats[0].shape,in_feats[1].shape,in_feats[2].shape)
+
 		
 		in_feats = torch.cat(in_feats, dim=1)
 		in_feats = in_feats.view(B, self.height, C, H, W)
@@ -475,9 +457,9 @@ class Model(nn.Module):
 	def __init__(self, in_chans=3, out_chans=4, window_size=8, img_size = 128,
 				 embed_dims=[24, 48, 96, 96, 48, 24],
 				 mlp_ratios=[2., 2., 4., 4., 2., 2.],
-				 depths=[2, 4, 8, 8, 4, 2],
+				 depths=[16, 16, 16, 8, 8, 8],
 				 num_heads=[2, 4, 6, 6, 4, 2],
-				 attn_ratio=[1 / 4, 1 / 2, 3 / 4, 0, 0, 0],
+				 attn_ratio=[1 / 4, 1 / 2, 3 / 4, 3 / 4, 2 / 4, 1 / 4],
 				 conv_type=['DWConv', 'DWConv', 'DWConv', 'DWConv', 'DWConv', 'DWConv'],
 				 norm_layer=[RLN, RLN, RLN, RLN, RLN, RLN]):
 		super(Model, self).__init__()
@@ -613,6 +595,7 @@ class Model(nn.Module):
 		M = 1 / (T + 1e-6)
 		x = x * M - M * N
 		x = x[:, :, :H, :W]
+
 
 		return x
 
